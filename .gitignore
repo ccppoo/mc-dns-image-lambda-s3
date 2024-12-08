@@ -1,0 +1,5 @@
+**/*.env
+
+.aws-sam/
+.aws/
+template.yml
