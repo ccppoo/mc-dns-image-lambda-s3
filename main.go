@@ -5,13 +5,15 @@ import (
 	"log"
 	"os"
 
+	handlers "mc-dns-image-lambda/handlers"
+	"time"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-
-	handlers "mc-dns-image-lambda/handlers"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -36,14 +38,18 @@ var (
 func init() {
 	// LoadDotEnv()
 
-	temp := os.Getenv("BUCKET_TEMP")
-	log.Printf("temp %s", temp)
-	static := os.Getenv("BUCKET_STATIC")
-	log.Printf("static %s", static)
-	user := os.Getenv("BUCKET_USER")
-	log.Printf("user %s", user)
+	temp := os.Getenv("BUCKET_PUBLIC")
+	log.Printf("BUCKET_PUBLIC %s", temp)
 
 	router := gin.Default()
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"https://localhost:5173"}, // Replace with allowed origins
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Content-Type", "Authorization", "token"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour, // Cache preflight response duration
+	}))
 
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
@@ -55,18 +61,11 @@ func init() {
 	router.GET("/", handlers.PlayersIntroHandler)
 	router.GET("/s3", handlers.ListObjects)
 	router.POST("/upload", handlers.UploadObject)
-	// api := router.Group("/api")
-	// {
-	// 	players := api.Group("/players")
-
-	// 	// Mapping Player routes to their handlers
-	// 	players.GET("/", handlers.PlayersIntroHandler)
-	// 	// players.GET("/get/:id", PlayerRequestsHandler.GetPlayerHandler)
-	// 	// players.GET("/getAll", PlayerRequestsHandler.GetAllPlayersHandler)
-	// 	// players.POST("/create", PlayerRequestsHandler.CreatePlayerHandler)
-	// 	// players.PATCH("/update/:id", PlayerRequestsHandler.UpdatePlayerHandler)
-	// 	// players.DELETE("/delete/:id", PlayerRequestsHandler.DeletePlayerHandler)
-	// }
+	temp_bucket_route := router.Group("/temp")
+	{
+		temp_bucket_route.POST("/upload", handlers.UploadObject)
+		temp_bucket_route.DELETE("/delete", handlers.DeleteObject)
+	}
 	ginLambda = ginadapter.New(router)
 }
 
