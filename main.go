@@ -61,6 +61,7 @@ func init() {
 	router.GET("/", handlers.PlayersIntroHandler)
 	router.GET("/s3", handlers.ListObjects)
 	router.POST("/upload", handlers.UploadObject)
+	router.POST("/upload/icon", handlers.UploadIcon)
 	temp_bucket_route := router.Group("/temp")
 	{
 		temp_bucket_route.POST("/upload", handlers.UploadObject)
