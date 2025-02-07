@@ -15,6 +15,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
+	middleware "mc-dns-image-lambda/middleware"
+
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
@@ -48,8 +50,9 @@ func init() {
 		AllowHeaders:     []string{"Content-Type", "Authorization", "token"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
-		MaxAge:           12 * time.Hour, // Cache preflight response duration
+		MaxAge:           24 * time.Hour, // Cache preflight response duration
 	}))
+	router.Use(middleware.AuthMiddleware())
 
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
@@ -58,15 +61,15 @@ func init() {
 	s3Client = s3.NewFromConfig(cfg)
 	handlers.SetS3Client(s3Client)
 
-	router.GET("/", handlers.PlayersIntroHandler)
 	router.GET("/s3", handlers.ListObjects)
-	router.POST("/upload", handlers.UploadObject)
-	router.POST("/upload/icon", handlers.UploadIcon)
-	temp_bucket_route := router.Group("/temp")
+
+	uploader_route := router.Group("/upload")
 	{
-		temp_bucket_route.POST("/upload", handlers.UploadObject)
-		temp_bucket_route.DELETE("/delete", handlers.DeleteObject)
+		uploader_route.POST("/image", handlers.UploadObject)
+		uploader_route.POST("/logo", handlers.UploadIcon)
 	}
+	// router.POST("/upload/image", handlers.UploadObject)
+
 	ginLambda = ginadapter.New(router)
 }
 

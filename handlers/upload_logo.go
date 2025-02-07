@@ -12,9 +12,8 @@ import (
 	// "github.com/aws/aws-sdk-go-v2/service/s3/types"
 
 	"bytes"
-	"image"
 	_ "image/png"
-	"io"
+	validator "mc-dns-image-lambda/validator"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -25,7 +24,6 @@ func UploadIcon(c *gin.Context) {
 
 	log.Println("upload icon")
 
-	// file, fileHeader, err := c.Request.FormFile("file")
 	file, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open file"})
@@ -35,9 +33,9 @@ func UploadIcon(c *gin.Context) {
 	log.Println("open image file")
 
 	openedFile, err := file.Open()
+
 	if err != nil {
 		// log.Fatal(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open file"})
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": 0,
 			"file": gin.H{
@@ -46,39 +44,15 @@ func UploadIcon(c *gin.Context) {
 		})
 		return
 	}
+
 	defer openedFile.Close()
 
-	log.Println("tee reader")
-
 	var buf bytes.Buffer
-	tee := io.TeeReader(openedFile, &buf)
 
-	m, _, err := image.Decode(tee)
-	// png 형식이 아닐 경우 error
-	log.Println("tee reader")
+	buf, err = validator.SanitizeLogo(openedFile)
 
 	if err != nil {
 		log.Fatal(err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": 0,
-			"file": gin.H{
-				"url": "",
-			},
-		})
-		return
-	}
-
-	log.Println("get image size")
-
-	g := m.Bounds()
-
-	// Get height and width
-	height := g.Dy()
-	width := g.Dx()
-	log.Printf("image width : %d, height : %d", width, height)
-
-	if !(height == 64 && width == 64) {
-		// log.Fatal(err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": 0,
 			"file": gin.H{
@@ -96,10 +70,8 @@ func UploadIcon(c *gin.Context) {
 	mimeMediaType := contentTypeSplited[0]
 
 	tempFileName := "temp/" + mimeMediaType + "/" + newFileName
+
 	if fileNameErr != nil {
-		// c.JSON(http.StatusBadRequest, gin.H{
-		// 	"msg": "malformed file",
-		// })
 		c.JSON(http.StatusOK, gin.H{
 			"success": 0,
 			"file": gin.H{
@@ -107,7 +79,6 @@ func UploadIcon(c *gin.Context) {
 			},
 		})
 		return
-
 	}
 
 	bucketName := os.Getenv("BUCKET_PUBLIC")
@@ -119,6 +90,7 @@ func UploadIcon(c *gin.Context) {
 		Body:        &buf,
 		ContentType: aws.String(file.Header.Get("Content-Type")),
 	})
+
 	if err != nil {
 		log.Printf("Failed to upload file to S3: %v", err)
 		c.JSON(http.StatusOK, gin.H{
@@ -131,6 +103,7 @@ func UploadIcon(c *gin.Context) {
 	}
 
 	imageFileURL := CDN_HOST + "/" + tempFileName
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": 1,
 		"file": gin.H{
