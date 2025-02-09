@@ -37,8 +37,3 @@ jobs:
       - name: Deploy to AWS Lambda
         run: |
           aws lambda update-function-code --function-name mc-dns-image-uploader --zip-file fileb://function.zip
-
-      - name: Update AWS Lambda architecture and runtime
-        run: |
-          aws lambda update-function-configuration --function-name mc-dns-image-uploader \
-            --runtime go1.x --handler bootstrap --architecture arm64
