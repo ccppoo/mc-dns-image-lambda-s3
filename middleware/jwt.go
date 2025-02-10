@@ -2,6 +2,7 @@ package middleware
 
 import (
 	// "log"
+
 	"net/http"
 	"time"
 
@@ -23,7 +24,10 @@ func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get token from cookie
 		// log.Printf("\n========== Auth Middleware Start =============\n")
-		tokenString, err := c.Cookie("token")
+		// tokenString, err := c.Cookie("token")
+		tokenString, err := c.Request.Cookie("token")
+		// log.Printf("maybeToken : %s", maybeToken)
+
 		// log.Printf("tokenString : %s", tokenString)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing token"})
@@ -33,7 +37,7 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		// Parse JWT token
 		// log.Println("start parsing token")
-		token, err := jwt.ParseWithClaims(tokenString, &MyCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.ParseWithClaims(tokenString.Value, &MyCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 			return []byte(secretKey), nil
 		}, jwt.WithLeeway(2*time.Second))
 
