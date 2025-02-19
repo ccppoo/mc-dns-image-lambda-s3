@@ -44,14 +44,16 @@ func init() {
 	log.Printf("BUCKET_PUBLIC %s", temp)
 
 	router := gin.Default()
+
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"https://localhost:5173"}, // Replace with allowed origins
+		AllowOrigins:     []string{"https://localhost:5173", "https://mc-server.kr"}, // Replace with allowed origins
 		AllowMethods:     []string{"GET", "POST", "OPTIONS"},
 		AllowHeaders:     []string{"Content-Type", "Authorization", "token"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           24 * time.Hour, // Cache preflight response duration
 	}))
+
 	router.Use(middleware.AuthMiddleware())
 
 	cfg, err := config.LoadDefaultConfig(context.TODO())
@@ -74,6 +76,7 @@ func init() {
 }
 
 func GinRequestHandler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+
 	return ginLambda.ProxyWithContext(ctx, request)
 }
 
