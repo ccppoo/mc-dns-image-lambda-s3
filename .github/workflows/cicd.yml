@@ -15,7 +15,7 @@ on:
       - main
     paths:
       - "!.github/**/*.yaml"
-      - "!.github/**/*.yml"
+      # - "!.github/**/*.yml"
       - "!**/*.md"
       - "!.git*"
 jobs:
@@ -42,11 +42,11 @@ jobs:
         env:
           ZIP_FILE_TAG: ${{ github.sha }}
         run: |
-          echo "ZIP_FILE_NAME=function_$(ZIP_FILE_TAG).zip" >> $GITHUB_ENV
-          echo "create file : $ZIP_FILE_NAME"
+          echo "create file : function_$(ZIP_FILE_TAG).zip"
+          echo "ZIP_FILE_NAME=function_$(ZIP_FILE_TAG).zip" >> $GITHUB_OUTPUT
 
       - name: Zip the binary
-        run: zip $ZIP_FILE_NAME bootstrap
+        run: zip ${{ steps.generate-zip-name.outputs.ZIP_FILE_NAME }} bootstrap
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -56,11 +56,11 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Upload to S3
-        run: aws s3 cp $ZIP_FILE_NAME s3://${{ secrets.AWS_MC_DNS_IMAGE_LAMBDA_S3_BUCKET }}
+        run: aws s3 cp ${{ steps.generate-zip-name.outputs.ZIP_FILE_NAME }} s3://${{ secrets.AWS_MC_DNS_IMAGE_LAMBDA_S3_BUCKET }}
 
       - name: Deploy to AWS Lambda
         run: |
           aws lambda update-function-code \
             --function-name mc-dns-image-uploader \
             --s3-bucket ${{ secrets.AWS_MC_DNS_IMAGE_LAMBDA_S3_BUCKET }} \
-            --s3-key $ZIP_FILE_NAME
+            --s3-key ${{ steps.generate-zip-name.outputs.ZIP_FILE_NAME }}
