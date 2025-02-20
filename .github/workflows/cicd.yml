@@ -42,8 +42,8 @@ jobs:
         env:
           ZIP_FILE_TAG: ${{ github.sha }}
         run: |
-          echo "create file : function_$(ZIP_FILE_TAG).zip"
-          echo "ZIP_FILE_NAME=function_$(ZIP_FILE_TAG).zip" >> $GITHUB_OUTPUT
+          echo "create file : function_$ZIP_FILE_TAG.zip"
+          echo "ZIP_FILE_NAME=function_$ZIP_FILE_TAG.zip" >> $GITHUB_OUTPUT
 
       - name: Zip the binary
         run: zip ${{ steps.generate-zip-name.outputs.ZIP_FILE_NAME }} bootstrap
