@@ -14,7 +14,7 @@ on:
     branches:
       - main
     paths:
-      - "!.github/**/*.yaml"
+      # - "!.github/**/*.yaml"
       # - "!.github/**/*.yml"
       - "!**/*.md"
       - "!.git*"
@@ -38,7 +38,8 @@ jobs:
       - name: Build the Go binary
         run: GOOS=linux GOARCH=arm64 go build -o bootstrap main.go
 
-      - name: generate zip name
+      - name: Generate zip name
+        id: generate-zip-name
         env:
           ZIP_FILE_TAG: ${{ github.sha }}
         run: |
