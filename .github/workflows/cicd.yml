@@ -1,13 +1,27 @@
 name: Deploy to AWS Lambda
 
 on:
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: "Log level"
+        required: true
+        default: "warning"
+      tags:
+        description: "Test scenario tags"
+        default: "manual trigger"
   push:
     branches:
       - main
-
+    paths:
+      - "!.github/**/*.yaml"
+      - "!.github/**/*.yml"
+      - "!**/*.md"
+      - "!.git*"
 jobs:
   build:
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-latest
+    # runs-on: ubuntu-24.04-arm -- NOTE: currently allowed for public repo 2025.02.20
 
     steps:
       - name: Checkout code
