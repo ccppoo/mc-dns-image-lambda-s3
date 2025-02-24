@@ -4,6 +4,7 @@ import (
 	// "log"
 
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,10 +12,10 @@ import (
 )
 
 var (
-	secretKey = "asdjanskdansdkajsndklasdnlaskndlasndjklasdasd"
+	secretKey = os.Getenv("JWT_SECRET")
 )
 
-type MyCustomClaims struct {
+type JWTClaims struct {
 	AccessType string `json:"typ"`
 	UserID     string `json:"uid"`
 	jwt.RegisteredClaims
@@ -37,7 +38,7 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		// Parse JWT token
 		// log.Println("start parsing token")
-		token, err := jwt.ParseWithClaims(tokenString.Value, &MyCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.ParseWithClaims(tokenString.Value, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 			return []byte(secretKey), nil
 		}, jwt.WithLeeway(2*time.Second))
 
@@ -49,7 +50,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		// Extract claims
-		if claims, ok := token.Claims.(*MyCustomClaims); ok && token.Valid {
+		if claims, ok := token.Claims.(*JWTClaims); ok && token.Valid {
 			c.Set("claims", claims)
 			// log.Printf("claims : ")
 			// log.Printf("claims.AccessType : %s", claims.AccessType)
